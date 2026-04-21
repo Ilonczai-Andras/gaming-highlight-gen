@@ -1,0 +1,9 @@
+# Only fields that differ from default.yaml are listed here.
+# Merged at runtime by load_game_config().
+game_id: r6
+display_name: "Rainbow Six Siege"
+moment:
+  pre_buffer_sec: 5.0
+  post_buffer_sec: 4.0
+  min_gap_sec: 2.0
+  max_clip_duration_sec: 20.0

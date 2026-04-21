@@ -1,0 +1,10 @@
+services:
+  highlight-gen:
+    build: .
+    volumes:
+      - ./input:/app/input
+      - ./output:/app/output
+    environment:
+      - HLG_LOG_FORMAT=console
+      - HLG_OUTPUT_DIR=/app/output
+      - HLG_TEMP_DIR=/tmp/hlg

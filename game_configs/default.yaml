@@ -1,0 +1,7 @@
+game_id: default
+display_name: "Default"
+moment:
+  pre_buffer_sec: 3.0
+  post_buffer_sec: 2.0
+  min_gap_sec: 1.0
+  max_clip_duration_sec: 15.0
