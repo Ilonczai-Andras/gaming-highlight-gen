@@ -1,0 +1,22 @@
+# Only fields that differ from default.yaml are listed here.
+# Merged at runtime by load_game_config().
+game_id: valorant
+display_name: "Valorant"
+moment:
+  pre_buffer_sec: 4.0
+  post_buffer_sec: 3.0
+  min_gap_sec: 1.5
+  max_clip_duration_sec: 18.0
+# Valorant has distinct ability and gunshot audio cues.
+audio:
+  spike_threshold_sigma: 2.2
+  min_peak_distance_sec: 1.0
+  max_signals_per_minute: 18
+  weight: 0.55
+visual:
+  filter_scene_cuts: true
+  weight: 0.35
+composite:
+  cluster_window_sec: 1.5
+  min_moment_score: 0.35
+  max_moments_per_video: 12

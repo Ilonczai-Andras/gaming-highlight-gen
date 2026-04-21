@@ -8,6 +8,46 @@ from typing import Any
 
 
 @dataclass
+class DetectorSignal:
+    """A single potential moment flagged by one detector.
+
+    Attributes:
+        timestamp_sec: Detection timestamp in seconds.
+        confidence: Signal confidence in range [0.0, 1.0].
+        detector_type: Source detector: ``"audio"``, ``"visual"``, or ``"ml"``.
+        event_type: Event category (e.g. ``"kill"``, ``"explosion"``, ``"scene_cut"``).
+        raw_value: Raw numeric value from the detector (e.g. RMS energy or frame diff score).
+        metadata: Arbitrary extra data attached to this signal.
+    """
+
+    timestamp_sec: float
+    confidence: float  # 0.0–1.0
+    detector_type: str  # "audio" | "visual" | "ml"
+    event_type: str = "generic"
+    raw_value: float = 0.0
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class DetectionResult:
+    """Full result of one detector run on a video.
+
+    Attributes:
+        detector_type: Identifier of the detector that produced this result.
+        signals: All signals found during this run.
+        processing_time_sec: Wall-clock time used for processing.
+        video_duration_sec: Duration of the source video.
+        config_snapshot: Copy of the relevant config at the time of detection.
+    """
+
+    detector_type: str
+    signals: list[DetectorSignal]
+    processing_time_sec: float
+    video_duration_sec: float
+    config_snapshot: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
 class Moment:
     """A detected interesting moment in a gameplay video.
 
@@ -18,6 +58,9 @@ class Moment:
         source_file: Path to the source video file.
         event_type: Event category (e.g. "kill", "spike_plant", "generic").
         metadata: Arbitrary extra data attached to this moment.
+        contributing_signals: All detector signals that contributed to this moment.
+        detector_breakdown: Per-detector confidence scores, e.g.
+            ``{"audio": 0.8, "visual": 0.6, "ml": 0.0}``.
     """
 
     start_sec: float
@@ -26,6 +69,8 @@ class Moment:
     source_file: Path
     event_type: str = "generic"  # e.g. "kill", "spike_plant", "generic"
     metadata: dict[str, Any] = field(default_factory=dict)
+    contributing_signals: list[DetectorSignal] = field(default_factory=list)
+    detector_breakdown: dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Validate moment field invariants."""

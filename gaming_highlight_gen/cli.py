@@ -206,3 +206,82 @@ def config_validate_command(
     except ValueError as exc:
         console.print(f"[red]Config error:[/red] {exc}")
         raise typer.Exit(code=1)
+
+
+@app.command("detect")
+def detect_command(
+    input_files: list[Path] = typer.Option(
+        ...,
+        "--input",
+        "-i",
+        help="Input video file(s). Repeat the flag for multiple files.",
+    ),
+    game: str = typer.Option(
+        "default",
+        "--game",
+        "-g",
+        help="Game ID (e.g. valorant, r6).",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Write JSON results to this file instead of stdout.",
+    ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable verbose (DEBUG) logging.",
+    ),
+) -> None:
+    """Run moment detection and print results as JSON.
+
+    Runs the detector pipeline on each input file and outputs all discovered
+    moments as a JSON array.  No video is rendered.
+    """
+    import json
+
+    global_config = GlobalConfig()
+    log_level = "DEBUG" if verbose else global_config.log_level
+    setup_logging(log_level, global_config.log_format)
+
+    for p in input_files:
+        if not p.exists():
+            console.print(f"[red]File not found:[/red] {p}")
+            raise typer.Exit(code=1)
+
+    try:
+        game_config = load_game_config(game, _get_config_dir())
+    except FileNotFoundError as exc:
+        console.print(f"[red]Config error:[/red] {exc}")
+        raise typer.Exit(code=1)
+
+    pipeline = Pipeline(global_config, game_config)
+
+    try:
+        moments = pipeline.detect_only(list(input_files))
+    except (FileNotFoundError, ValueError) as exc:
+        console.print(f"[red]Detection error:[/red] {exc}")
+        raise typer.Exit(code=1)
+
+    payload = [
+        {
+            "source_file": str(m.source_file),
+            "start_sec": m.start_sec,
+            "end_sec": m.end_sec,
+            "score": m.score,
+            "event_type": m.event_type,
+            "detector_breakdown": m.detector_breakdown,
+        }
+        for m in moments
+    ]
+
+    json_output = json.dumps(payload, indent=2)
+
+    if output is not None:
+        output.write_text(json_output, encoding="utf-8")
+        console.print(f"[green]Moments written to:[/green] {output}  ({len(moments)} moments)")
+    else:
+        typer.echo(json_output)
+

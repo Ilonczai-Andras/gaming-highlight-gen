@@ -383,6 +383,53 @@ class FFmpegWrapper:
         )
         return output
 
+    def extract_audio(self, source: Path, output: Path) -> Path:
+        """Extract the audio track from *source* as a WAV file.
+
+        Args:
+            source: Source video file.
+            output: Destination WAV file path.
+
+        Returns:
+            Path to the generated WAV file.
+
+        Raises:
+            FFmpegError: If FFmpeg returns a non-zero exit code.
+        """
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+        cmd = [
+            self._config.ffmpeg_binary,
+            "-y",
+            "-i", str(source),
+            "-vn",
+            "-acodec", "pcm_s16le",
+            "-ar", "44100",
+            "-ac", "1",
+            str(output),
+        ]
+
+        log.info("extract_audio.start", source=str(source), output=str(output))
+        start = time.monotonic()
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        elapsed_ms = int((time.monotonic() - start) * 1000)
+
+        if result.returncode != 0:
+            log.error(
+                "extract_audio.failed",
+                source=str(source),
+                returncode=result.returncode,
+                elapsed_ms=elapsed_ms,
+            )
+            raise FFmpegError(
+                f"extract_audio failed for {source}",
+                result.returncode,
+                result.stderr,
+            )
+
+        log.info("extract_audio.done", output=str(output), elapsed_ms=elapsed_ms)
+        return output
+
 
 # ------------------------------------------------------------------
 # Helpers
